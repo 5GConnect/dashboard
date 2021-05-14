@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-let baseURL = 'localhost:80';
+let baseURL = 'localhost:8080';
 
 export function getRequirements() {
   return request({
