@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-let baseURL = 'localhost'; // url = base url + request url
+let baseURL = 'localhost:80';
 
 export function getRequirements() {
   return request({
@@ -44,7 +44,7 @@ export function getSubscriptionInfo() {
   })
 }
 
-export function getPDUSession() {
+export function getPDUsession() {
   return request({
     baseURL: baseURL,
     url: '/pdu-session',
@@ -52,7 +52,7 @@ export function getPDUSession() {
   })
 }
 
-export function postPDUSession(params) {
+export function postPDUsession(params) {
   return request({
     baseURL: baseURL,
     url: '/pdu-session',
