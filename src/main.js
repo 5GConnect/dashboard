@@ -16,9 +16,9 @@ import '@/permission' // permission control
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faSignOutAlt, faTachometerAlt } from '@fortawesome/free-solid-svg-icons'
+import { faDownload, faSignOutAlt, faTachometerAlt, faUpload, faLink } from '@fortawesome/free-solid-svg-icons'
 
-library.add(faSignOutAlt, faTachometerAlt)
+library.add(faSignOutAlt, faTachometerAlt, faDownload, faUpload, faLink)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
@@ -31,8 +31,8 @@ Vue.component('font-awesome-icon', FontAwesomeIcon)
  * please remove it before going online ! ! !
  */
 if (process.env.NODE_ENV === 'production') {
-  const { mockXHR } = require('../mock')
-  mockXHR()
+    const { mockXHR } = require('../mock')
+    mockXHR()
 }
 
 // set ElementUI lang to EN
@@ -41,8 +41,8 @@ Vue.use(ElementUI, { locale })
 Vue.config.productionTip = false
 
 new Vue({
-  el: '#app',
-  router,
-  store,
-  render: h => h(App)
+    el: '#app',
+    router,
+    store,
+    render: h => h(App)
 })

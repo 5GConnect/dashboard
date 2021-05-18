@@ -6,72 +6,42 @@
         :visible.sync="dialogVisible"
         width="60%"
       >
-        <table v-if="subscriptionInfo.nssai">
-          <thead>
-            <tr>
-              <th>SST</th>
-              <th>SD</th>
-              <th>DNN/APN</th>
-              <th>type</th>
-              <th></th>
-              <th>5QI/QCI</th>
-              <th>ARP</th>
-              <th>Capability</th>
-              <th>Vulnerability</th>
-              <th>MBR DL/UL</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(
-                elem, index
-              ) in subscriptionInfo.nssai.defaultSingleNssais.concat(
-                subscriptionInfo.nssai.singleNssais
-              )"
-              :key="index"
-            >
-              <td>{{ elem.sst }}</td>
-              <td>{{ elem.sd }}</td>
-              <td v-for="(el, index) in elem.dnnConfigurations" :key="index">
-                {{ index }}
-              </td>
-              <td>
-                {{
-                  elem.dnnConfigurations["internet"].pduSessionTypes
-                    .defaultSessionType
-                }}
-              </td>
-              <td>
-                {{ elem.dnnConfigurations["internet"]["5gQosProfile"]["5qi"] }}
-              </td>
-              <td>
-                {{
-                  elem.dnnConfigurations["internet"]["5gQosProfile"]
-                    .priorityLevel
-                }}
-              </td>
-              <td>
-                {{
-                  elem.dnnConfigurations["internet"]["5gQosProfile"].arp
-                    .preemptCap
-                }}
-              </td>
-              <td>
-                {{
-                  elem.dnnConfigurations["internet"]["5gQosProfile"].arp
-                    .preemptVuln
-                }}
-              </td>
-              <td>
-                {{ elem.dnnConfigurations["internet"].sessionAmbr.downlink }}/{{
-                  elem.dnnConfigurations["internet"].sessionAmbr.uplink
-                }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <el-table
+          :data="displayableNSSAIs"
+          ref="nssaiTable"
+          style="width: 100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55"> </el-table-column>
+          <el-table-column prop="sst" label="SST" width="55"> </el-table-column>
+          <el-table-column prop="sd" label="SD" width="75"> </el-table-column>
+          <el-table-column prop="apn" label="APN"></el-table-column>
+          <el-table-column
+            width="75"
+            prop="defaultPduSession"
+            label="TYPE"
+          ></el-table-column>
+          <el-table-column prop="5qi" label="5QI" width="55"></el-table-column>
+          <el-table-column prop="arp" label="ARP PRIORITY"></el-table-column>
+          <el-table-column
+            prop="capability"
+            label="CAPABILITY"
+          ></el-table-column>
+          <el-table-column
+            prop="vulnerability"
+            label="VULNERABILITY"
+          ></el-table-column>
+          <el-table-column
+            prop="sessionAmbrDownlink"
+            label="SESSION AMBR DL"
+          ></el-table-column>
+          <el-table-column
+            prop="sessionAmbrUplink"
+            label="SESSION AMBR UL"
+          ></el-table-column>
+        </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogVisible = false">Close</el-button>
+          <el-button @click="handleCloseDialog">Close</el-button>
           <el-button type="primary" @click="createPDUsession">Create</el-button>
         </span>
       </el-dialog>
@@ -79,21 +49,49 @@
       <el-badge is-dot class="item" :type="gnbConnected ? 'success' : 'danger'">
         <el-card class="box-card">
           <div slot="header" class="clearfix">
-            <span v-if="PDUs.length > 0">UE addr: {{ PDUs[0].address }}</span>
-            <span style="float: right; padding: 0px 0px 0px 15px" type="text"
-              >gNB: {{ gnbCampedCell }}</span
+            <h2>IMSI-900000000</h2>
+          </div>
+          <div>
+            <h2>UE informations</h2>
+            <el-row>
+              <el-col :span="10"
+                ><span><b>Connected gNB ID: </b></span>
+              </el-col>
+              <el-col :span="14">
+                <span>{{ gnbCampedCell }}</span></el-col
+              >
+            </el-row>
+            <br />
+            <el-row v-if="subscriptionInfo.subscribedUeAmbr">
+              <el-col :span="10"
+                ><span><b>UE AMBR: </b></span>
+              </el-col>
+              <el-col :span="14">
+                <font-awesome-icon icon="upload" class="el-icon upload" /><span
+                  style="margin-right: 12px"
+                >
+                  {{ subscriptionInfo.subscribedUeAmbr.uplink }}
+                </span>
+                <font-awesome-icon
+                  icon="download"
+                  class="el-icon download"
+                /><span>
+                  {{ subscriptionInfo.subscribedUeAmbr.downlink }}
+                </span>
+              </el-col>
+            </el-row>
+            <el-divider></el-divider>
+            <el-button
+              type="primary"
+              circle
+              @click="dialogVisible = true"
+              id="nsButton"
             >
-            <div v-if="subscriptionInfo.subscribedUeAmbr">
-              <i class="el-icon-upload2">{{
-                subscriptionInfo.subscribedUeAmbr.uplink
-              }}</i>
-              <i class="el-icon-download">{{
-                subscriptionInfo.subscribedUeAmbr.downlink
-              }}</i>
-            </div>
+              <font-awesome-icon icon="link" class="el-icon link" />
+            </el-button>
           </div>
 
-          <div v-for="elem in PDUs" :key="elem.id">
+          <!-- <div v-for="elem in PDUs" :key="elem.id">
             <el-row :gutter="20">
               <el-col :span="8"
                 ><div class="grid-content bg-purple">
@@ -124,15 +122,7 @@
               >
             </el-row>
             <el-divider></el-divider>
-          </div>
-
-          <el-button
-            type="primary"
-            icon="el-icon-connection"
-            circle
-            @click="dialogVisible = true"
-            style="float: right; margin: 10x"
-          ></el-button>
+          </div> -->
         </el-card>
       </el-badge>
     </el-main>
@@ -150,120 +140,35 @@ import {
 
 export default {
   name: "Dashboard",
-  computed: {},
   data() {
     return {
       dialogVisible: false,
       gnbConnected: false,
-      PDUs: [
-        {
-          sd: "sd",
-          address: {
-            ipv6Addr: "2001:db8:85a3::8a2e:370:7334",
-            ipv4Addr: "198.51.100.1",
-            ipv6Prefix: "2001:db8:abcd:12::0/64",
-          },
-          sst: 153,
-          dnn: "dnn",
-          pduSessionTypes: "1",
-          id: 0,
-        },
-      ],
-      gnbCampedCell: "camped-cell",
-      subscriptionInfo: {
-        //to be removed
-        // "subscribedUeAmbr": {
-        //   "uplink": "50",
-        //   "downlink": "100"
-        // },
-        // "nssai": {
-        //   "defaultSingleNssais": [
-        //         {
-        //             "sst": 1,
-        //             "sd": "000001",
-        //             "dnnConfigurations": {
-        //                 "internet": {
-        //                     "pduSessionTypes": {
-        //                         "defaultSessionType": "IPV4V6",
-        //                         "allowedSessionTypes": [
-        //                             "IPV4",
-        //                             "IPV6",
-        //                             "IPV4V6"
-        //                         ]
-        //                     },
-        //                     "sscModes": {
-        //                         "defaultSscMode": "SSC_MODE_1",
-        //                         "allowedSscModes": [
-        //                             "SSC_MODE_1",
-        //                             "SSC_MODE_2",
-        //                             "SSC_MODE_3"
-        //                         ]
-        //                     },
-        //                     "5gQosProfile": {
-        //                         "5qi": 9,
-        //                         "arp": {
-        //                             "priorityLevel": 8,
-        //                             "preemptCap": "NOT_PREEMPT",
-        //                             "preemptVuln": "NOT_PREEMPTABLE"
-        //                         },
-        //                         "priorityLevel": 8
-        //                     },
-        //                     "sessionAmbr": {
-        //                         "uplink": "1024 Kbps",
-        //                         "downlink": "1024 Kbps"
-        //                     }
-        //                 }
-        //             }
-        //         },
-        //         {
-        //             "sst": 2,
-        //             "sd": "000001",
-        //             "dnnConfigurations": {
-        //                 "internet": {
-        //                     "pduSessionTypes": {
-        //                         "defaultSessionType": "IPV4V6",
-        //                         "allowedSessionTypes": [
-        //                             "IPV4",
-        //                             "IPV6",
-        //                             "IPV4V6"
-        //                         ]
-        //                     },
-        //                     "sscModes": {
-        //                         "defaultSscMode": "SSC_MODE_1",
-        //                         "allowedSscModes": [
-        //                             "SSC_MODE_1",
-        //                             "SSC_MODE_2",
-        //                             "SSC_MODE_3"
-        //                         ]
-        //                     },
-        //                     "5gQosProfile": {
-        //                         "5qi": 3,
-        //                         "arp": {
-        //                             "priorityLevel": 1,
-        //                             "preemptCap": "NOT_PREEMPT",
-        //                             "preemptVuln": "NOT_PREEMPTABLE"
-        //                         },
-        //                         "priorityLevel": 1
-        //                     },
-        //                     "sessionAmbr": {
-        //                         "uplink": "1048576 Kbps",
-        //                         "downlink": "1048576 Kbps"
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     ],
-        //     "singleNssais": []
-        // }
-      },
+      PDUs: [],
+      selectedNSSAIs: [],
+      gnbCampedCell: "",
+      subscriptionInfo: {},
     };
+  },
+  computed: {
+    displayableNSSAIs: function () {
+      if (this.subscriptionInfo.nssai) {
+        let displayableNSSAIs = filterAndFlattenNssai(
+          this.subscriptionInfo.nssai.defaultSingleNssais.concat(
+            this.subscriptionInfo.nssai.singleNssais
+          )
+        );
+        return displayableNSSAIs;
+      } else {
+        return {};
+      }
+    },
   },
   methods: {
     fetchData: function () {
       let that = this;
       getPDUsession()
         .then(function (response) {
-          console.log(response);
           that.PDUs = response;
         })
         .catch(function (error) {
@@ -272,7 +177,6 @@ export default {
 
       getSubscriptionInfo()
         .then(function (response) {
-          console.log(response);
           that.subscriptionInfo = response;
         })
         .catch(function (error) {
@@ -281,7 +185,6 @@ export default {
 
       getGNBConnectionState()
         .then(function (response) {
-          console.log(response)
           if (response.status == "CM-CONNECTED") {
             that.gnbConnected = true;
             that.gnbCampedCell = response["camped-cell"];
@@ -295,33 +198,69 @@ export default {
         });
     },
     createPDUsession: function () {
-      //take parameters from the selected nssai
-      console.log("called: createPDU session");
       let that = this;
-      postPDUsession({
-        sst: 2,
-        sd: "000001",
-        dnn: "internet",
-        pduSessionType: "IPV4",
-      })
-        .then(function (response) {
-          that.$notify({
-            title: "Done.",
-            message: "PDU session created successfully",
-            type: "success",
-          });
-          that.dialogVisible = false;
-          that.fetchData();
-        })
-        .catch(function (error) {
-          console.log(error);
+      if (this.selectedNSSAIs.length > 0) {
+        let promises = this.selectedNSSAIs.map((selectedNSSAI) =>
+          postPDUsession({
+            sst: selectedNSSAI.sst,
+            sd: selectedNSSAI.sd,
+            dnn: selectedNSSAI.apn,
+            pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession,
+          })
+        );
+        Promise.allSettled(promises).then((result) => console.log(result));
+        console.log(promises);
+      } else {
+        this.$notify({
+          title: "Warning.",
+          message: "You must select at least one NSSAI",
+          type: "warning",
         });
+      }
+    },
+    handleSelectionChange(tableSelection) {
+      this.selectedNSSAIs = tableSelection;
+      console.log(tableSelection);
+    },
+    handleCloseDialog() {
+      this.dialogVisible = false;
+      this.selectedNSSAIs = [];
+      this.$refs.nssaiTable.clearSelection();
     },
   },
   mounted() {
     this.fetchData();
   },
 };
+function filterAndFlattenDnnConfiguration(dnnConfigurationObject) {
+  let res = [];
+  for (const [key, value] of Object.entries(dnnConfigurationObject)) {
+    let qosProfile = value["5gQosProfile"];
+    res.push({
+      apn: key,
+      defaultPduSession: value.pduSessionTypes.defaultSessionType,
+      "5qi": qosProfile["5qi"],
+      arp: qosProfile.priorityLevel,
+      capability: qosProfile.arp.preemptCap,
+      vulnerability: qosProfile.arp.preemptVuln,
+      sessionAmbrDownlink: value.sessionAmbr.downlink,
+      sessionAmbrUplink: value.sessionAmbr.uplink,
+    });
+  }
+  return res;
+}
+function filterAndFlattenNssai(nssaiList) {
+  return nssaiList.flatMap((element) =>
+    filterAndFlattenDnnConfiguration(
+      element.dnnConfigurations
+    ).map((filteredAndFlattenedDnnConfigurations) =>
+      Object.assign(
+        { sst: element.sst, sd: element.sd },
+        filteredAndFlattenedDnnConfigurations
+      )
+    )
+  );
+}
 </script>
 
 <style lang="scss" scoped>
@@ -339,8 +278,49 @@ export default {
   margin-top: 10px;
   margin-right: 40px;
 }
-.el-badge__content.is-dot {
-  width: 16px !important;
-  height: 16px !important;
+
+.box-card {
+  width: 17vw;
+}
+
+.download {
+  color: firebrick;
+}
+
+.upload {
+  color: green;
+}
+
+.link {
+  color: white;
+}
+
+#nsButton {
+  animation-name: pulse;
+  animation-duration: 8s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  float: right;
+  margin: 10x;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(102, 177, 255, 0.7);
+  }
+
+  15% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(102, 177, 255, 0);
+  }
+
+  30% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(102, 177, 255, 0);
+  }
+}
+div.cell {
+  text-align: center !important;
 }
 </style>
