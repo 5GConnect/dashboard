@@ -81,6 +81,51 @@
               </el-col>
             </el-row>
             <el-divider></el-divider>
+            <div v-if="PDUs.length > 0">
+              <h2>Established PDU sessions</h2>
+              <div class="established-pdu-container">
+                <el-card
+                  v-for="elem in PDUs"
+                  :key="elem.id"
+                  class="established-pdu-card"
+                >
+                  <el-row :gutter="5">
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>id: </b>{{ elem.id }}
+                      </div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>sd: </b>{{ elem.sd }}
+                      </div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>sst: </b>{{ elem.sst }}
+                      </div></el-col
+                    >
+                  </el-row>
+                  <el-row :gutter="5">
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>dnn: </b>{{ elem.dnn }}
+                      </div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>type: </b>{{ elem.pduSessionType }}
+                      </div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div class="grid-content bg-purple">
+                        <b>ip: </b>{{ elem.ipAddress.ipv4Addr }}
+                      </div></el-col
+                    >
+                  </el-row>
+                </el-card>
+              </div>
+            </div>
             <el-button
               type="primary"
               circle
@@ -90,39 +135,6 @@
               <font-awesome-icon icon="link" class="el-icon link" />
             </el-button>
           </div>
-
-          <!-- <div v-for="elem in PDUs" :key="elem.id">
-            <el-row :gutter="20">
-              <el-col :span="8"
-                ><div class="grid-content bg-purple">
-                  sd:{{ elem.sd }}
-                </div></el-col
-              >
-              <el-col :span="8"
-                ><div class="grid-content bg-purple">
-                  sst:{{ elem.sst }}
-                </div></el-col
-              >
-              <el-col :span="8"
-                ><div class="grid-content bg-purple">
-                  dnn:{{ elem.dnn }}
-                </div></el-col
-              >
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12"
-                ><div class="grid-content bg-purple">
-                  id:{{ elem.id }}
-                </div></el-col
-              >
-              <el-col :span="12"
-                ><div class="grid-content bg-purple">
-                  session type:{{ elem.pduSessionType }}
-                </div></el-col
-              >
-            </el-row>
-            <el-divider></el-divider>
-          </div> -->
         </el-card>
       </el-badge>
     </el-main>
@@ -205,11 +217,49 @@ export default {
             sst: selectedNSSAI.sst,
             sd: selectedNSSAI.sd,
             dnn: selectedNSSAI.apn,
-            pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession,
+            pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession
           })
         );
-        Promise.allSettled(promises).then((result) => console.log(result));
-        console.log(promises);
+        Promise.allSettled(promises).then((results) => {
+          if (
+            results.every((resultObject) => resultObject.status === "fulfilled")
+          ) {
+            this.$notify({
+              title: "Success.",
+              message:
+                "All PDU sessions has been created",
+              type: "success",
+            });
+            results
+              .map((resultObject) => resultObject.value)
+              .forEach(function (value, i) {
+                //TODO: allSettled should preserve order, check needed
+                let nssai = that.selectedNSSAIs[i];
+                // Technical Debt: We do not need to check pdu session with status command, but with SMF API (event subscriptio).
+                //The API is not available in O5GS already.
+                if (that.PDUs.every((pdu) => pdu.id !== value.id)) {
+                  that.PDUs.push({
+                    sst: nssai.sst,
+                    sd: nssai.sd,
+                    dnn: nssai.apn,
+                    pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession
+                    ipAddress: value.ipAddress,
+                    emergency: value.emergency,
+                    id: value.id,
+                  });
+                }
+              });
+            this.handleCloseDialog();
+          } else {
+            this.$notify({
+              title: "Error.",
+              message:
+                "Something went wrong. Not all PDU sessions has been created",
+              type: "error",
+            });
+            this.handleCloseDialog();
+          }
+        });
       } else {
         this.$notify({
           title: "Warning.",
@@ -220,7 +270,6 @@ export default {
     },
     handleSelectionChange(tableSelection) {
       this.selectedNSSAIs = tableSelection;
-      console.log(tableSelection);
     },
     handleCloseDialog() {
       this.dialogVisible = false;
@@ -280,7 +329,8 @@ function filterAndFlattenNssai(nssaiList) {
 }
 
 .box-card {
-  width: 17vw;
+  width: 25vw;
+  padding: 20px;
 }
 
 .download {
@@ -322,5 +372,14 @@ function filterAndFlattenNssai(nssaiList) {
 }
 div.cell {
   text-align: center !important;
+}
+.established-pdu-card {
+  margin-bottom: 5px;
+  height: 8vh;
+}
+.established-pdu-container {
+  height: 17vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
 }
 </style>
