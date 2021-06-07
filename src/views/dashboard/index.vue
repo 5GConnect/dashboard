@@ -177,16 +177,20 @@ export default {
     },
   },
   methods: {
-    fetchData: function () {
+    fetchPDUSessions: function() {
       let that = this;
       getPDUsession()
         .then(function (response) {
+          console.log(response)
           that.PDUs = response;
         })
         .catch(function (error) {
           console.log(error);
         });
-
+    },
+    fetchData: function () {
+      let that = this;
+      this.fetchPDUSessions();
       getSubscriptionInfo()
         .then(function (response) {
           that.subscriptionInfo = response;
@@ -227,34 +231,16 @@ export default {
             this.$notify({
               title: "Success.",
               message:
-                "All PDU sessions has been created",
+                "The creation of all PDU sessions has been triggered",
               type: "success",
             });
-            results
-              .map((resultObject) => resultObject.value)
-              .forEach(function (value, i) {
-                //TODO: allSettled should preserve order, check needed
-                let nssai = that.selectedNSSAIs[i];
-                // Technical Debt: We do not need to check pdu session with status command, but with SMF API (event subscriptio).
-                //The API is not available in O5GS already.
-                if (that.PDUs.every((pdu) => pdu.id !== value.id)) {
-                  that.PDUs.push({
-                    sst: nssai.sst,
-                    sd: nssai.sd,
-                    dnn: nssai.apn,
-                    pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession
-                    ipAddress: value.ipAddress,
-                    emergency: value.emergency,
-                    id: value.id,
-                  });
-                }
-              });
             this.handleCloseDialog();
+            this.fetchPDUSessions();
           } else {
             this.$notify({
               title: "Error.",
               message:
-                "Something went wrong. Not all PDU sessions has been created",
+                "Something went wrong. Not all PDU sessions will be created",
               type: "error",
             });
             this.handleCloseDialog();
