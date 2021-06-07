@@ -177,16 +177,24 @@ export default {
     },
   },
   methods: {
-    fetchPDUSessions: function() {
+    fetchPDUSessions: function () {
       let that = this;
       getPDUsession()
         .then(function (response) {
-          console.log(response)
+          console.log(response);
           that.PDUs = response;
         })
         .catch(function (error) {
           console.log(error);
         });
+    },
+    updateGnbConnectionState(state) {
+      if (state.status == "CM-CONNECTED") {
+        this.gnbConnected = true;
+      } else if (state.status == "CM-IDLE") {
+        this.gnbConnected = false;
+      }
+      this.gnbCampedCell = state["camped-cell"];
     },
     fetchData: function () {
       let that = this;
@@ -201,13 +209,7 @@ export default {
 
       getGNBConnectionState()
         .then(function (response) {
-          if (response.status == "CM-CONNECTED") {
-            that.gnbConnected = true;
-            that.gnbCampedCell = response["camped-cell"];
-          } else if (esponse.status == "CM-IDLE") {
-            that.gnbConnected = false;
-            that.gnbCampedCell = "camped-cell";
-          }
+          that.updateGnbConnectionState(response);
         })
         .catch(function (error) {
           console.log(error);
@@ -230,8 +232,7 @@ export default {
           ) {
             this.$notify({
               title: "Success.",
-              message:
-                "The creation of all PDU sessions has been triggered",
+              message: "The creation of all PDU sessions has been triggered",
               type: "success",
             });
             this.handleCloseDialog();
@@ -254,6 +255,10 @@ export default {
         });
       }
     },
+    manageSocketUpdate(event) {
+      console.log(event.data);
+      this.updateGnbConnectionState(JSON.parse(event.data));
+    },
     handleSelectionChange(tableSelection) {
       this.selectedNSSAIs = tableSelection;
     },
@@ -265,6 +270,8 @@ export default {
   },
   mounted() {
     this.fetchData();
+    var ws = new WebSocket("ws://localhost:8081");
+    ws.onmessage = (event) => this.manageSocketUpdate(event);
   },
 };
 function filterAndFlattenDnnConfiguration(dnnConfigurationObject) {
@@ -286,13 +293,12 @@ function filterAndFlattenDnnConfiguration(dnnConfigurationObject) {
 }
 function filterAndFlattenNssai(nssaiList) {
   return nssaiList.flatMap((element) =>
-    filterAndFlattenDnnConfiguration(
-      element.dnnConfigurations
-    ).map((filteredAndFlattenedDnnConfigurations) =>
-      Object.assign(
-        { sst: element.sst, sd: element.sd },
-        filteredAndFlattenedDnnConfigurations
-      )
+    filterAndFlattenDnnConfiguration(element.dnnConfigurations).map(
+      (filteredAndFlattenedDnnConfigurations) =>
+        Object.assign(
+          { sst: element.sst, sd: element.sd },
+          filteredAndFlattenedDnnConfigurations
+        )
     )
   );
 }
