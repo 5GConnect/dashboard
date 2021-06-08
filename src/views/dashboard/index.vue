@@ -107,9 +107,13 @@
                     >
                     <el-col :span="3"
                       ><div class="grid-content bg-purple">
-                        <el-button type="danger" icon="el-icon-delete" circle @click="removePDUsession(elem.id)"></el-button>
-                      </div></el-col
-                    >
+                        <el-button
+                          type="danger"
+                          icon="el-icon-delete"
+                          circle
+                          @click="removePDUsession(elem.id)"
+                        ></el-button></div
+                    ></el-col>
                   </el-row>
                   <el-row :gutter="5">
                     <el-col :span="7"
@@ -153,7 +157,7 @@ import {
   getSubscriptionInfo,
   postPDUsession,
   getPDUsession,
-  deletePDUsession
+  deletePDUsession,
 } from "@/api/UEDigitalEntity";
 
 export default {
@@ -262,27 +266,25 @@ export default {
       }
     },
     removePDUsession: function (pdu_id) {
-      deletePDUsession({
-        pdu_id: pdu_id
-      }).then((result) => {
-          if (result.status === "fulfilled") {
+      deletePDUsession(pdu_id)
+        .then((result) => {
+          console.log(result);
             this.$notify({
               title: "Success.",
-              message: "PDU deletion has been triggered",
+              message: result,
               type: "success",
             });
-            this.handleCloseDialog();
             this.fetchPDUSessions();
-          } else {
-            this.$notify({
+        })
+        .catch(function (error) {
+          console.log(error);
+          this.$notify({
               title: "Error.",
-              message:
-                "Something went wrong. Cannot delete PDU session",
+              message: "Something went wrong. Cannot delete PDU session",
               type: "error",
             });
-            this.handleCloseDialog();
-          }
-        });
+        })
+        .finally(() => this.handleCloseDialog());
     },
     manageSocketUpdate(event) {
       console.log(event.data);

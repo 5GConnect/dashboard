@@ -61,11 +61,10 @@ export function postPDUsession(params) {
     })
 }
 
-export function deletePDUsession(params) {
-  return request({
-      baseURL: baseURL,
-      url: '/pdu-session',
-      method: 'delete',
-      data: params
-  })
+export function deletePDUsession(pdu_id) {
+    return request({
+        baseURL: baseURL,
+        url: `/pdu-session/${pdu_id}`,
+        method: 'delete',
+    })
 }
