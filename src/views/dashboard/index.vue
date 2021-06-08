@@ -90,34 +90,39 @@
                   class="established-pdu-card"
                 >
                   <el-row :gutter="5">
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>id: </b>{{ elem.id }}
                       </div></el-col
                     >
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>sd: </b>{{ elem.sd }}
                       </div></el-col
                     >
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>sst: </b>{{ elem.sst }}
                       </div></el-col
                     >
+                    <el-col :span="3"
+                      ><div class="grid-content bg-purple">
+                        <el-button type="danger" icon="el-icon-delete" circle @click="removePDUsession(elem.id)"></el-button>
+                      </div></el-col
+                    >
                   </el-row>
                   <el-row :gutter="5">
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>dnn: </b>{{ elem.dnn }}
                       </div></el-col
                     >
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>type: </b>{{ elem.pduSessionType }}
                       </div></el-col
                     >
-                    <el-col :span="8"
+                    <el-col :span="7"
                       ><div class="grid-content bg-purple">
                         <b>ip: </b>{{ elem.ipAddress.ipv4Addr }}
                       </div></el-col
@@ -148,6 +153,7 @@ import {
   getSubscriptionInfo,
   postPDUsession,
   getPDUsession,
+  deletePDUsession
 } from "@/api/UEDigitalEntity";
 
 export default {
@@ -254,6 +260,29 @@ export default {
           type: "warning",
         });
       }
+    },
+    removePDUsession: function (pdu_id) {
+      deletePDUsession({
+        pdu_id: pdu_id
+      }).then((result) => {
+          if (result.status === "fulfilled") {
+            this.$notify({
+              title: "Success.",
+              message: "PDU deletion has been triggered",
+              type: "success",
+            });
+            this.handleCloseDialog();
+            this.fetchPDUSessions();
+          } else {
+            this.$notify({
+              title: "Error.",
+              message:
+                "Something went wrong. Cannot delete PDU session",
+              type: "error",
+            });
+            this.handleCloseDialog();
+          }
+        });
     },
     manageSocketUpdate(event) {
       console.log(event.data);
