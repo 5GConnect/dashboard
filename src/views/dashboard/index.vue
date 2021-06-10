@@ -301,7 +301,7 @@ export default {
   },
   mounted() {
     this.fetchData();
-    var ws = new WebSocket("ws://localhost:8081");
+    var ws = new WebSocket(`${process.env.VUE_APP_DIGITAL_ENTITY_UE}`.replace('http','ws'));
     ws.onmessage = (event) => this.manageSocketUpdate(event);
   },
 };

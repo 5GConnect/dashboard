@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-let baseURL = `${DIGITAL_ENTITY_UE}`;
+let baseURL = `${process.env.VUE_APP_DIGITAL_ENTITY_UE}`;
 
 export function getRequirements() {
     return request({
