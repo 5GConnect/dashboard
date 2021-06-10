@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-let baseURL = 'http://localhost:8081';
+let baseURL = `${DIGITAL_ENTITY_UE}`;
 
 export function getRequirements() {
     return request({
