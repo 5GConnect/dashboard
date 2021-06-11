@@ -8,6 +8,6 @@ RUN npm run install
 
 RUN npm install -g serve
 
-RUN npm run build:prod
+CMD npm run build:prod
 
 CMD serve -s dist
