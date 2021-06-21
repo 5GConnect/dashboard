@@ -1,69 +1,67 @@
 import request from '@/utils/request'
 
-let baseURL = `${process.env.VUE_APP_DIGITAL_ENTITY_UE}`;
-
-export function getRequirements() {
+export function getRequirements(ueUrl) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/requirements',
         method: 'get'
     })
 }
 
-export function patchRequirements(params) {
+export function patchRequirements(ueUrl, params) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/requirements',
         method: 'patch',
         params: params
     })
 }
 
-export function postRequirements(params) {
+export function postRequirements(ueUrl, params) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/requirements',
         method: 'post',
         params: params
     })
 }
 
-export function getGNBConnectionState() {
+export function getGNBConnectionState(ueUrl) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/gnb-connection-state',
         method: 'get'
     })
 }
 
-export function getSubscriptionInfo() {
+export function getSubscriptionInfo(ueUrl) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/subscription-info',
         method: 'get'
     })
 }
 
-export function getPDUsession() {
+export function getPDUsession(ueUrl) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/pdu-session',
         method: 'get'
     })
 }
 
-export function postPDUsession(params) {
+export function postPDUsession(ueUrl) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: '/pdu-session',
         method: 'post',
         data: params
     })
 }
 
-export function deletePDUsession(pdu_id) {
+export function deletePDUsession(ueUrl, pdu_id) {
     return request({
-        baseURL: baseURL,
+        baseURL: ueUrl,
         url: `/pdu-session/${pdu_id}`,
         method: 'delete',
     })

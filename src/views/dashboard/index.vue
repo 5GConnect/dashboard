@@ -160,6 +160,8 @@ import {
   deletePDUsession,
 } from "@/api/UEDigitalEntity";
 
+import { getActiveUEs } from "@/api/DiscoveryService";
+
 export default {
   name: "Dashboard",
   data() {
@@ -170,6 +172,7 @@ export default {
       selectedNSSAIs: [],
       gnbCampedCell: "",
       subscriptionInfo: {},
+      activeUEsInformation: Map(),
     };
   },
   computed: {
@@ -187,43 +190,53 @@ export default {
     },
   },
   methods: {
-    fetchPDUSessions: function () {
-      let that = this;
-      getPDUsession()
-        .then(function (response) {
-          console.log(response);
-          that.PDUs = response;
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    },
-    updateGnbConnectionState(state) {
-      if (state.status == "CM-CONNECTED") {
-        this.gnbConnected = true;
-      } else if (state.status == "CM-IDLE") {
-        this.gnbConnected = false;
+    updateGnbConnectionState(ueSupi, state) {
+      let ueInfo = this.activeUEsInformation.get(ueSupi);
+      if (ueInfo) {
+        if (state.status == "CM-CONNECTED") {
+          ueInfo["gnbConnected"] = true;
+        } else if (state.status == "CM-IDLE") {
+          ueInfo["gnbConnected"] = false;
+        }
+        ueInfo["gnbCampedCell"] = state["camped-cell"];
       }
-      this.gnbCampedCell = state["camped-cell"];
     },
-    fetchData: function () {
-      let that = this;
-      this.fetchPDUSessions();
-      getSubscriptionInfo()
+    fetchPDUSessions: function (ueSupi) {
+      let ueInfo = this.activeUEsInformation.get(ueSupi);
+      getPDUsession(ueInfo.url)
         .then(function (response) {
-          that.subscriptionInfo = response;
+          ueInfo["PDUs"] = response;
         })
         .catch(function (error) {
           console.log(error);
         });
+    },
+    fetchSubscriptionInfo: function (ueSupi) {
+      let ueInfo = this.activeUEsInformation.get(ueSupi);
+      getSubscriptionInfo(ueInfo.url)
+        .then(function (response) {
+          ueInfo["subscriptionInfo"] = response;
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
+    fetchGNBConnectionState: function (ueSupi) {
+      let ueInfo = this.activeUEsInformation.get(ueSupi);
+      getGNBConnectionState(ueInfo.url)
+        .then(function (response) {
+          that.updateGnbConnectionState(ueSupi,response);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    },
+    fetchData: function (ueSupi) {
+      
+      this.fetchPDUSessions(ueSupi);
+      this.fetchSubscriptionInfo(ueSupi);
+      this.fetchGNBConnectionState(ueSupi);
 
-      getGNBConnectionState()
-        .then(function (response) {
-          that.updateGnbConnectionState(response);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
     },
     createPDUsession: function () {
       let that = this;
@@ -269,26 +282,25 @@ export default {
       deletePDUsession(pdu_id)
         .then((result) => {
           console.log(result);
-            this.$notify({
-              title: "Success.",
-              message: result,
-              type: "success",
-            });
-            this.fetchPDUSessions();
+          this.$notify({
+            title: "Success.",
+            message: result,
+            type: "success",
+          });
+          this.fetchPDUSessions();
         })
         .catch(function (error) {
           console.log(error);
           this.$notify({
-              title: "Error.",
-              message: "Something went wrong. Cannot delete PDU session",
-              type: "error",
-            });
+            title: "Error.",
+            message: "Something went wrong. Cannot delete PDU session",
+            type: "error",
+          });
         })
         .finally(() => this.handleCloseDialog());
     },
-    manageSocketUpdate(event) {
-      console.log(event.data);
-      this.updateGnbConnectionState(JSON.parse(event.data));
+    manageSocketUpdate(event, ueImsi) {
+      this.updateGnbConnectionState(ueImsi, JSON.parse(event.data));
     },
     handleSelectionChange(tableSelection) {
       this.selectedNSSAIs = tableSelection;
@@ -300,9 +312,25 @@ export default {
     },
   },
   mounted() {
-    this.fetchData();
-    var ws = new WebSocket(`${process.env.VUE_APP_DIGITAL_ENTITY_UE}`.replace('http','ws'));
-    ws.onmessage = (event) => this.manageSocketUpdate(event);
+    let that = this;
+    getActiveUEs()
+      .then(function (response) {
+        that.activeUEsInformation = new Map(
+          response.map((supiIpAndPort) => [
+            supiIpAndPort.supi,
+            { url: `http://${supiIpAndPort.ip}:${supiIpAndPort.port}` },
+          ])
+        );
+        that.activeUEsInformation.forEach((ueInfo, ueSupi) => {
+          let ueUrl = ueInfo.url;
+          var ws = new WebSocket(ueUrl.replace("http", "ws"));
+          ws.onmessage = (event) => that.manageSocketUpdate(event, ueSupi);
+        });
+        that.fetchData(ueSupi);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   },
 };
 function filterAndFlattenDnnConfiguration(dnnConfigurationObject) {
