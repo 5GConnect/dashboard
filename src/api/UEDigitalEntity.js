@@ -50,7 +50,7 @@ export function getPDUsession(ueUrl) {
     })
 }
 
-export function postPDUsession(ueUrl) {
+export function postPDUsession(ueUrl, params) {
     return request({
         baseURL: ueUrl,
         url: '/pdu-session',
