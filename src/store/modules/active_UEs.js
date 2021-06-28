@@ -18,6 +18,25 @@ async function fetchGNBConnectionState(ueUrl) {
     return await getGNBConnectionState(ueUrl);
 }
 
+async function fetchActiveUE(ueUrl) {
+    let activeUEs = await getActiveUEs()
+    let activeUEsInformation = await Promise.all(activeUEs.map(async(supiIpAndPort) => {
+        let ueUrl = `http://${supiIpAndPort.ip.ipv4Addr}:${supiIpAndPort.port}`
+        let ueSupi = supiIpAndPort.supi
+        let gnbConnectionStatus = await fetchGNBConnectionState(ueUrl);
+        let pdus = await fetchPDUSessions(ueUrl)
+        let subscriptionInfo = await fetchSubscriptionInfo(ueUrl)
+        return [ueSupi, {
+            url: ueUrl,
+            PDUs: pdus,
+            subscriptionInfo: subscriptionInfo,
+            gnbConnected: gnbConnectionStatus.status === "CM-CONNECTED" ? true : false,
+            gnbCampedCell: gnbConnectionStatus["camped-cell"]
+        }]
+    }))
+    return activeUEsInformation
+}
+
 const state = {
     data: Object.create(null)
 }
@@ -38,29 +57,31 @@ const mutations = {
 const actions = {
     async getUEs({ commit, dispatch }) {
         try {
-            let activeUEs = await getActiveUEs()
-            let activeUEsInformation = await Promise.all(activeUEs.map(async(supiIpAndPort) => {
-                let ueUrl = `http://${supiIpAndPort.ip.ipv4Addr}:${supiIpAndPort.port}`
-                var ws = new WebSocket(ueUrl.replace("http", "ws"));
-                let ueSupi = supiIpAndPort.supi
-                ws.onmessage = (event) => {
-                    let gnbConnectionData = JSON.parse(event.data)
-                    dispatch('updateGnbConnectionInfo', { gnbConnectionData, ueSupi })
-                }
-                let gnbConnectionStatus = await fetchGNBConnectionState(ueUrl);
-                let pdus = await fetchPDUSessions(ueUrl)
-                let subscriptionInfo = await fetchSubscriptionInfo(ueUrl)
-                return [ueSupi, {
-                    url: ueUrl,
-                    PDUs: pdus,
-                    subscriptionInfo: subscriptionInfo,
-                    gnbConnected: gnbConnectionStatus.status === "CM-CONNECTED" ? true : false,
-                    gnbCampedCell: gnbConnectionStatus["camped-cell"]
-                }]
-            }))
+            let activeUEsInformation = await fetchActiveUE();
             commit('SET_ACTIVE_UEs', Object.fromEntries(activeUEsInformation))
+            dispatch('registerWebSocket')
         } catch (errorObject) {
             console.log(errorObject.message);
+        }
+    },
+    registerWebSocket({ commit, dispatch }) {
+        for (const [ueSupi, ueInformation] of Object.entries(state.data)) {
+            var ue_ws = new WebSocket(ueInformation.url.replace("http", "ws"));
+            ue_ws.onmessage = (event) => {
+                let gnbConnectionData = JSON.parse(event.data)
+                dispatch('updateGnbConnectionInfo', { gnbConnectionData, ueSupi })
+            }
+        }
+        var discovery_ws = new WebSocket(process.env.VUE_APP_DISCOVERY_SERVICE.replace("http", "ws"));
+        discovery_ws.onmessage = async(event) => {
+            let data = JSON.parse(event.data)
+            if (data.event === 'ue_expired') {
+                delete state.data[data.supi]
+                commit('SET_ACTIVE_UEs', Object.create(state.data))
+            } else if (data.event === 'ue_joined') {
+                let activeUEsInformation = await fetchActiveUE();
+                commit('SET_ACTIVE_UEs', Object.fromEntries(activeUEsInformation))
+            }
         }
     },
     updateGnbConnectionInfo({ commit }, { gnbConnectionData, ueSupi }) {
