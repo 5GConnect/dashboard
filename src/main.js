@@ -16,9 +16,9 @@ import '@/permission' // permission control
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faDownload, faSignOutAlt, faTachometerAlt, faUpload, faLink } from '@fortawesome/free-solid-svg-icons'
+import { faDownload, faSignOutAlt, faTachometerAlt, faUpload, faLink, faMobile, faServer } from '@fortawesome/free-solid-svg-icons'
 
-library.add(faSignOutAlt, faTachometerAlt, faDownload, faUpload, faLink)
+library.add(faSignOutAlt, faTachometerAlt, faDownload, faUpload, faLink, faMobile, faServer)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 

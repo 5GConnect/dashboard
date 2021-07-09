@@ -44,16 +44,39 @@ export const constantRoutes = [{
         hidden: true
     },
 
+    // {
+    //     path: '/',
+    //     component: Layout,
+    //     redirect: '/dashboard',
+    //     children: [{
+    //         path: 'dashboard',
+    //         name: 'Dashboard',
+    //         component: () =>
+    //             import ('@/views/dashboard/index'),
+    //         meta: { title: 'Dashboard', icon: 'tachometer-alt' }
+    //     }]
+    // },
     {
         path: '/',
         component: Layout,
-        redirect: '/dashboard',
+        redirect: '/core_components',
         children: [{
-            path: 'dashboard',
-            name: 'Dashboard',
+            path: 'core_components',
+            component: () =>
+                import ('@/views/core_components/index'),
+            name: 'CoreComponents',
+            meta: { title: 'Core Components', icon: 'server' }
+        }]
+    },
+    {
+        path: '/ues',
+        component: Layout,
+        children: [{
+            path: 'index',
+            name: 'Ues',
             component: () =>
                 import ('@/views/dashboard/index'),
-            meta: { title: 'Dashboard', icon: 'tachometer-alt' }
+            meta: { title: 'User Equipments', icon: 'mobile' }
         }]
     },
 

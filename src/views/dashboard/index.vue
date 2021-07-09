@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-container">
+  <div>
     <UEInformationCard
       v-for="(activeUEInformation, ueSupi) in activeUEsInformations"
       :key="ueSupi"
@@ -17,7 +17,7 @@
 import UEInformationCard from "@/components/UEInformationCard";
 
 export default {
-  name: "Dashboard",
+  name: "Ues",
   computed: {
     activeUEsInformations() {
       return this.$store.state.activeUEs.data;
