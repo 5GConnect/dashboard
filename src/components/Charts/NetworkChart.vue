@@ -68,13 +68,24 @@ export default {
           },
           left: "1%",
         },
-         tooltip: {
-          trigger: 'item',
+        tooltip: {
+          trigger: "item",
           formatter: function (params) {
-            console.log(JSON.stringify(params.value, null, 1).replace(/\n/g, "<br/>"))
-            return JSON.stringify(params.value, null, 1).replace(/\n/g, "<br/>");
+            if (typeof params.value === "string" || params.value instanceof String) {
+              return params.value;
+            }
+            let displaybleInformation = "";
+            for (const index in params.value) {
+              let serviceInfo = params.value[index];
+              let ipEndPoint = serviceInfo.ipEndPoints[0];
+              displaybleInformation += `serviceInstanceId: ${serviceInfo.serviceInstanceId} <br/>
+                                        serviceName: ${serviceInfo.serviceName} <br/>
+                                        serviceStatus: ${serviceInfo.nfServiceStatus} <br/>
+                                        serviceUrl:  ${serviceInfo.scheme}://${ipEndPoint.ipv4Address}:${ipEndPoint.port}/${serviceInfo.serviceName}/${serviceInfo.versions[0].apiVersionInUri} <br/> <br/>`;
+            }
+            return displaybleInformation;
           },
-         },
+        },
         series: [
           {
             name: "Component information",
