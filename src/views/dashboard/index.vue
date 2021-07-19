@@ -24,7 +24,7 @@ export default {
     }
   },
   components: {
-    UEInformationCard,
+    UEInformationCard
   },
   methods: {},
   created() {

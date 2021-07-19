@@ -45,7 +45,7 @@
     <el-badge is-dot class="item" :type="gnbConnected ? 'success' : 'danger'">
       <el-card class="box-card">
         <div slot="header" class="clearfix">
-          <h2>{{ueSupi}}</h2>
+          <h2>{{ ueSupi }}</h2>
         </div>
         <div>
           <h2>UE informations</h2>
@@ -84,8 +84,9 @@
                 v-for="elem in PDUs"
                 :key="elem.id"
                 class="established-pdu-card"
+                @click="openConsole(elem.id)"
               >
-                <el-row :gutter="5">
+                <el-row :gutter="5"  type="flex" class="row-bg" justify="space-between">
                   <el-col :span="7"
                     ><div class="grid-content bg-purple">
                       <b>id: </b>{{ elem.id }}
@@ -101,17 +102,8 @@
                       <b>sst: </b>{{ elem.sst }}
                     </div></el-col
                   >
-                  <el-col :span="3"
-                    ><div class="grid-content bg-purple">
-                      <el-button
-                        type="danger"
-                        icon="el-icon-delete"
-                        circle
-                        @click="removePDUsession(elem.id)"
-                      ></el-button></div
-                  ></el-col>
                 </el-row>
-                <el-row :gutter="5">
+                <el-row :gutter="5"  type="flex" class="row-bg" justify="space-between">
                   <el-col :span="7"
                     ><div class="grid-content bg-purple">
                       <b>dnn: </b>{{ elem.dnn }}
@@ -128,6 +120,26 @@
                     </div></el-col
                   >
                 </el-row>
+                <el-row :gutter="5" type="flex" class="row-bg" justify="end">
+                  <el-col :span="3"
+                    ><div class="grid-content bg-purple">
+                      <el-button
+                        type="danger"
+                        icon="el-icon-delete"
+                        circle
+                        @click="removePDUsession(elem.id)"
+                      ></el-button></div
+                  ></el-col>
+                  <el-col :span="3"
+                    ><div class="grid-content bg-purple">
+                      <el-button
+                        type="primary"
+                        icon="el-icon-s-promotion"
+                        circle
+                        @click="openConsole(elem.ipAddress.ipv4Addr)"
+                      ></el-button></div
+                  ></el-col>
+                </el-row>
               </el-card>
             </div>
           </div>
@@ -142,20 +154,32 @@
         </div>
       </el-card>
     </el-badge>
+    <NetworkCommandConsole ref="console" :ueUrl="ueUrl" />
   </el-main>
 </template>
 
 <script>
 import { postPDUsession, deletePDUsession } from "@/api/UEDigitalEntity";
+import NetworkCommandConsole from "@/components/NetworkCommandConsole";
 
 export default {
   name: "UEInformationCard",
-  props: ["gnbConnected", "gnbCampedCell", "subscriptionInfo", "PDUs", "ueSupi", "ueUrl"],
+  props: [
+    "gnbConnected",
+    "gnbCampedCell",
+    "subscriptionInfo",
+    "PDUs",
+    "ueSupi",
+    "ueUrl",
+  ],
   data() {
     return {
       selectedNSSAIs: [],
       dialogVisible: false,
     };
+  },
+  components: {
+    NetworkCommandConsole,
   },
   computed: {
     displayableNSSAIs() {
@@ -192,7 +216,14 @@ export default {
               type: "success",
             });
             this.handleCloseDialog();
-            setTimeout(() => this.$store.dispatch("activeUEs/updatePduSessions", this.ueSupi), 500);
+            setTimeout(
+              () =>
+                this.$store.dispatch(
+                  "activeUEs/updatePduSessions",
+                  this.ueSupi
+                ),
+              500
+            );
           } else {
             this.$notify({
               title: "Error.",
@@ -214,21 +245,28 @@ export default {
     removePDUsession: function (pdu_id) {
       deletePDUsession(this.ueUrl, pdu_id)
         .then((result) => {
-            this.$notify({
-              title: "Success.",
-              message: result,
-              type: "success",
-            });
-            setTimeout(() => this.$store.dispatch("activeUEs/updatePduSessions", this.ueSupi), 500);
+          this.$notify({
+            title: "Success.",
+            message: result,
+            type: "success",
+          });
+          setTimeout(
+            () =>
+              this.$store.dispatch("activeUEs/updatePduSessions", this.ueSupi),
+            500
+          );
         })
         .catch(function (error) {
           this.$notify({
-              title: "Error.",
-              message: "Something went wrong. Cannot delete PDU session",
-              type: "error",
-            });
+            title: "Error.",
+            message: "Something went wrong. Cannot delete PDU session",
+            type: "error",
+          });
         })
         .finally(() => this.handleCloseDialog());
+    },
+    openConsole: function (sessionIp) {
+      this.$refs.console.toggleConsole(sessionIp);
     },
   },
 };
@@ -296,7 +334,7 @@ div.cell {
 }
 .established-pdu-card {
   margin-bottom: 5px;
-  height: 8vh;
+  //height: 8vh;
 }
 .established-pdu-container {
   height: 17vh;
