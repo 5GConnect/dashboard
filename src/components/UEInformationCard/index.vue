@@ -2,7 +2,7 @@
   <el-main>
     <el-dialog
       title="Enstablish a new PDU session"
-      :visible.sync="dialogVisible"
+      :visible.sync="pduDialogVisible"
       width="60%"
     >
       <el-table
@@ -37,8 +37,27 @@
         ></el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="handleCloseDialog">Close</el-button>
+        <el-button @click="handleClosePduDialog">Close</el-button>
         <el-button type="primary" @click="createPDUsession">Create</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog
+      title="Select UE requirments"
+      :visible.sync="requirmentsDialogVisible"
+      width="60%"
+    >
+      <el-table
+        :data="requirments"
+        ref="requirmentsTable"
+        style="width: 100%"
+        highlight-current-row
+        @current-change="handleRequirmentChange"
+      >
+        <el-table-column prop="name"> </el-table-column>
+      </el-table>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="handleCloseRequirmentsDialog">Close</el-button>
+        <!-- <el-button type="primary" @click="createPDUsession">Create</el-button> -->
       </span>
     </el-dialog>
 
@@ -86,7 +105,12 @@
                 class="established-pdu-card"
                 @click="openConsole(elem.id)"
               >
-                <el-row :gutter="5"  type="flex" class="row-bg" justify="space-between">
+                <el-row
+                  :gutter="5"
+                  type="flex"
+                  class="row-bg"
+                  justify="space-between"
+                >
                   <el-col :span="7"
                     ><div class="grid-content bg-purple">
                       <b>id: </b>{{ elem.id }}
@@ -103,7 +127,12 @@
                     </div></el-col
                   >
                 </el-row>
-                <el-row :gutter="5"  type="flex" class="row-bg" justify="space-between">
+                <el-row
+                  :gutter="5"
+                  type="flex"
+                  class="row-bg"
+                  justify="space-between"
+                >
                   <el-col :span="7"
                     ><div class="grid-content bg-purple">
                       <b>dnn: </b>{{ elem.dnn }}
@@ -146,10 +175,18 @@
           <el-button
             type="primary"
             circle
-            @click="dialogVisible = true"
+            @click="pduDialogVisible = true"
             id="nsButton"
           >
             <font-awesome-icon icon="link" class="el-icon link" />
+          </el-button>
+          <el-button
+            type="primary"
+            circle
+            @click="requirmentsDialogVisible = true"
+            id="nsButton"
+          >
+            <font-awesome-icon icon="scroll" class="el-icon link" />
           </el-button>
         </div>
       </el-card>
@@ -175,7 +212,9 @@ export default {
   data() {
     return {
       selectedNSSAIs: [],
-      dialogVisible: false,
+      requirments: [{ name: "HIGH_BANDWIDTH" }, { name: "LOW_BANDWIDTH" }],
+      pduDialogVisible: false,
+      requirmentsDialogVisible: false,
     };
   },
   components: {
@@ -190,10 +229,13 @@ export default {
     handleSelectionChange(tableSelection) {
       this.selectedNSSAIs = tableSelection;
     },
-    handleCloseDialog() {
-      this.dialogVisible = false;
+    handleClosePduDialog() {
+      this.pduDialogVisible = false;
       this.selectedNSSAIs = [];
       this.$refs.nssaiTable.clearSelection();
+    },
+    handleCloseRequirmentsDialog() {
+      this.requirmentsDialogVisible = false;
     },
     createPDUsession: function () {
       //let that = this;
@@ -215,7 +257,7 @@ export default {
               message: "The creation of all PDU sessions has been triggered",
               type: "success",
             });
-            this.handleCloseDialog();
+            this.handleClosePduDialog();
             setTimeout(
               () =>
                 this.$store.dispatch(
@@ -231,7 +273,7 @@ export default {
                 "Something went wrong. Not all PDU sessions will be created",
               type: "error",
             });
-            this.handleCloseDialog();
+            this.handleClosePduDialog();
           }
         });
       } else {
@@ -241,6 +283,9 @@ export default {
           type: "warning",
         });
       }
+    },
+    handleRequirmentChange(selectedValue) {
+      console.log(selectedValue.name);
     },
     removePDUsession: function (pdu_id) {
       deletePDUsession(this.ueUrl, pdu_id)
@@ -263,7 +308,7 @@ export default {
             type: "error",
           });
         })
-        .finally(() => this.handleCloseDialog());
+        .finally(() => this.handleClosePduDialog());
     },
     openConsole: function (sessionIp) {
       this.$refs.console.toggleConsole(sessionIp);
