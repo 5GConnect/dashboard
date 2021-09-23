@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-let baseURL = 'http://localhost:8080';
+let baseURL = `${process.env.VUE_APP_DISCOVERY_5GS_DE}`;
 
 export function getActiveComponents() {
     return request({
