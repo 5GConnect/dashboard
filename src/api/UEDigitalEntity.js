@@ -66,3 +66,11 @@ export function deletePDUsession(ueUrl, pdu_id) {
         method: 'delete',
     })
 }
+
+export function getPDUSessionByRequirement(ueUrl, requirement) {
+    return request({
+        baseURL: ueUrl,
+        url: `/pdu-session/${requirement}`,
+        method: 'get'
+    })
+}

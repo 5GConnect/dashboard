@@ -196,7 +196,11 @@
 </template>
 
 <script>
-import { postPDUsession, deletePDUsession } from "@/api/UEDigitalEntity";
+import {
+  postPDUsession,
+  deletePDUsession,
+  getPDUSessionByRequirement,
+} from "@/api/UEDigitalEntity";
 import NetworkCommandConsole from "@/components/NetworkCommandConsole";
 
 export default {
@@ -212,7 +216,10 @@ export default {
   data() {
     return {
       selectedNSSAIs: [],
-      requirments: [{ name: "HIGH_BANDWIDTH" }, { name: "LOW_BANDWIDTH" }],
+      requirments: [
+        { name: "HIGH_DOWNLINK_BANDWIDTH" },
+        { name: "LOW_DOWNLINK_BANDWIDTH" },
+      ],
       pduDialogVisible: false,
       requirmentsDialogVisible: false,
     };
@@ -285,7 +292,41 @@ export default {
       }
     },
     handleRequirmentChange(selectedValue) {
-      console.log(selectedValue.name);
+      getPDUSessionByRequirement(this.ueUrl, selectedValue.name)
+        .then((result) => {
+          postPDUsession(this.ueUrl, result)
+            .then((result) => {
+              this.$notify({
+                title: "Success.",
+                message: result,
+                type: "success",
+              });
+              setTimeout(
+                () =>
+                  this.$store.dispatch(
+                    "activeUEs/updatePduSessions",
+                    this.ueSupi
+                  ),
+                500
+              );
+            })
+            .catch(function (error) {
+              this.$notify({
+                title: "Error.",
+                message: "Something went wrong. Cannot delete PDU session",
+                type: "error",
+              });
+            })
+            .finally(() => this.handleCloseRequirmentsDialog());
+        })
+        .catch(function () {
+          this.$notify({
+            title: "Error.",
+            message:
+              "Something went wrong. Cannot get PDU session information by requirement",
+            type: "error",
+          });
+        });
     },
     removePDUsession: function (pdu_id) {
       deletePDUsession(this.ueUrl, pdu_id)
@@ -307,8 +348,7 @@ export default {
             message: "Something went wrong. Cannot delete PDU session",
             type: "error",
           });
-        })
-        .finally(() => this.handleClosePduDialog());
+        });
     },
     openConsole: function (sessionIp) {
       this.$refs.console.toggleConsole(sessionIp);
