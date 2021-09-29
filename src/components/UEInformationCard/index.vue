@@ -292,41 +292,65 @@ export default {
       }
     },
     handleRequirmentChange(selectedValue) {
-      getPDUSessionByRequirement(this.ueUrl, selectedValue.name)
-        .then((result) => {
-          postPDUsession(this.ueUrl, result)
-            .then((result) => {
-              this.$notify({
-                title: "Success.",
-                message: result,
-                type: "success",
-              });
-              setTimeout(
-                () =>
-                  this.$store.dispatch(
-                    "activeUEs/updatePduSessions",
-                    this.ueSupi
-                  ),
-                500
-              );
-            })
-            .catch(function (error) {
-              this.$notify({
-                title: "Error.",
-                message: "Something went wrong. Cannot delete PDU session",
-                type: "error",
-              });
-            })
-            .finally(() => this.handleCloseRequirmentsDialog());
-        })
-        .catch(function () {
-          this.$notify({
-            title: "Error.",
-            message:
-              "Something went wrong. Cannot get PDU session information by requirement",
-            type: "error",
+      if (selectedValue) {
+        getPDUSessionByRequirement(this.ueUrl, selectedValue.name)
+          .then((result) => {
+            let promises = this.PDUs.filter(
+              (establishedPdu) => result.sst == establishedPdu.sst
+            ).map((establishedPdu) => {
+              deletePDUsession(this.ueUrl, establishedPdu.id);
+            });
+            Promise.allSettled(promises).then((results) => {
+              if (
+                results.every(
+                  (resultObject) => resultObject.status === "fulfilled"
+                )
+              ) {
+                postPDUsession(this.ueUrl, result)
+                  .then((result) => {
+                    this.$notify({
+                      title: "Success.",
+                      message: result,
+                      type: "success",
+                    });
+                    setTimeout(
+                      () =>
+                        this.$store.dispatch(
+                          "activeUEs/updatePduSessions",
+                          this.ueSupi
+                        ),
+                      500
+                    );
+                  })
+                  .catch(function (error) {
+                    this.$notify({
+                      title: "Error.",
+                      message:
+                        "Something went wrong. Cannot delete PDU session",
+                      type: "error",
+                    });
+                  })
+                  .finally(() => this.handleCloseRequirmentsDialog());
+              } else {
+                this.$notify({
+                  title: "Error.",
+                  message:
+                    "Something went wrong. Unable to deleting exixting PDU session for the slice.",
+                  type: "error",
+                });
+                this.handleCloseRequirmentsDialog();
+              }
+            });
+          })
+          .catch(function () {
+            this.$notify({
+              title: "Error.",
+              message:
+                "Something went wrong. Cannot get PDU session information by requirement",
+              type: "error",
+            });
           });
-        });
+      }
     },
     removePDUsession: function (pdu_id) {
       deletePDUsession(this.ueUrl, pdu_id)
@@ -336,13 +360,14 @@ export default {
             message: result,
             type: "success",
           });
+          this.$refs.requirmentsTable.setCurrentRow();
           setTimeout(
             () =>
               this.$store.dispatch("activeUEs/updatePduSessions", this.ueSupi),
             500
           );
         })
-        .catch(function (error) {
+        .catch(function () {
           this.$notify({
             title: "Error.",
             message: "Something went wrong. Cannot delete PDU session",
