@@ -36,6 +36,30 @@
           label="SESSION AMBR UL"
         ></el-table-column>
       </el-table>
+      <el-row :gutter="7" style="margin-top:10px">
+        <el-col :span="4">
+          <div class="grid-content">
+              <el-input
+                placeholder="Endpoint IP"
+                v-model="endPointIp"
+                validate-event
+                clearable
+                maxlength="15">
+              </el-input>
+          </div>
+        </el-col>
+        <el-col :span="3">
+          <div class="grid-content">
+              <el-input
+                placeholder="Port"
+                v-model="endPointPort"
+                validate-event
+                clearable
+                maxlength="5">
+              </el-input>
+          </div>
+        </el-col>
+      </el-row>
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleClosePduDialog">Close</el-button>
         <el-button type="primary" @click="createPDUsession">Create</el-button>
@@ -55,6 +79,30 @@
       >
         <el-table-column prop="name"> </el-table-column>
       </el-table>
+      <el-row :gutter="7" style="margin-top:10px">
+        <el-col :span="4">
+          <div class="grid-content">
+              <el-input
+                placeholder="Endpoint IP"
+                v-model="endPointIp"
+                validate-event
+                clearable
+                maxlength="15">
+              </el-input>
+          </div>
+        </el-col>
+        <el-col :span="3">
+          <div class="grid-content">
+              <el-input
+                placeholder="Port"
+                v-model="endPointPort"
+                validate-event
+                clearable
+                maxlength="5">
+              </el-input>
+          </div>
+        </el-col>
+      </el-row>
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleCloseRequirmentsDialog">Close</el-button>
         <!-- <el-button type="primary" @click="createPDUsession">Create</el-button> -->
@@ -216,6 +264,8 @@ export default {
   data() {
     return {
       selectedNSSAIs: [],
+      endPointIp: "",
+      endPointPort: 80,
       requirments: [
         { name: "HIGH_DOWNLINK_BANDWIDTH" },
         { name: "LOW_DOWNLINK_BANDWIDTH" },
@@ -239,20 +289,35 @@ export default {
     handleClosePduDialog() {
       this.pduDialogVisible = false;
       this.selectedNSSAIs = [];
+      this.endPointIp = ""
+      this.endPointPort = 80
       this.$refs.nssaiTable.clearSelection();
     },
     handleCloseRequirmentsDialog() {
       this.requirmentsDialogVisible = false;
     },
     createPDUsession: function () {
-      //let that = this;
-      if (this.selectedNSSAIs.length > 0) {
+      if(!this.validateIp(this.endPointIp) || !this.validatePort(this.endPointPort)) {
+          this.$notify({
+            title: "Warning.",
+            message: "Invalid Ip address and port",
+            type: "warning",
+          });
+      } else if (this.selectedNSSAIs.length <= 0) { 
+          this.$notify({
+            title: "Warning.",
+            message: "You must select at least one NSSAI",
+            type: "warning",
+          });
+      } else {
         let promises = this.selectedNSSAIs.map((selectedNSSAI) =>
           postPDUsession(this.ueUrl, {
             sst: selectedNSSAI.sst,
             sd: selectedNSSAI.sd,
             dnn: selectedNSSAI.apn,
             pduSessionType: "IPV4", //selectedNSSAI.defaultPduSession
+            endPointIp: this.endPointIp,
+            endPointPort: this.endPointPort
           })
         );
         Promise.allSettled(promises).then((results) => {
@@ -283,17 +348,17 @@ export default {
             this.handleClosePduDialog();
           }
         });
-      } else {
-        this.$notify({
-          title: "Warning.",
-          message: "You must select at least one NSSAI",
-          type: "warning",
-        });
       }
     },
     handleRequirmentChange(selectedValue) {
-      if (selectedValue) {
-        getPDUSessionByRequirement(this.ueUrl, selectedValue.name)
+      if(!this.validateIp(this.endPointIp) || !this.validatePort(this.endPointPort)) {
+          this.$notify({
+            title: "Warning.",
+            message: "Invalid Ip address and port",
+            type: "warning",
+          });
+      } else if (selectedValue) {
+        getPDUSessionByRequirement(this.ueUrl, selectedValue.name, this.endPointIp, this.endPointPort)
           .then((result) => {
             let promises = this.PDUs.filter(
               (establishedPdu) => result.sst == establishedPdu.sst
@@ -378,6 +443,14 @@ export default {
     openConsole: function (sessionIp) {
       this.$refs.console.toggleConsole(sessionIp);
     },
+    validatePort: function(port) {
+      let regex = new RegExp('((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))')
+      return regex.test(port)
+    },
+    validateIp: function(ip) {
+      let regex = new RegExp('^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
+      return regex.test(ip)
+    }
   },
 };
 </script>

@@ -67,10 +67,10 @@ export function deletePDUsession(ueUrl, pdu_id) {
     })
 }
 
-export function getPDUSessionByRequirement(ueUrl, requirement) {
+export function getPDUSessionByRequirement(ueUrl, requirement, endPointIp, endPointPort) {
     return request({
         baseURL: ueUrl,
-        url: `/pdu-session/${requirement}`,
+        url: `/pdu-session/${requirement}?endPointIp=${endPointIp}&endPointPort=${endPointPort}`,
         method: 'get'
     })
 }
